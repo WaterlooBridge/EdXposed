@@ -1,0 +1,9 @@
+/.externalNativeBuild
+/build
+/libs
+/obj
+/release
+/template_override/system/framework/edxposed.dex
+/template_override/system/lib
+/template_override/system/lib64
+*.iml
