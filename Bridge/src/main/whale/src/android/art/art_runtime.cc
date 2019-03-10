@@ -202,6 +202,7 @@ ArtRuntime::HookMethod(JNIEnv *env, jclass decl_class, jobject hooked_java_metho
     );
     param->shorty_ = hooked_method.GetShorty(env, hooked_java_method);
     param->is_static_ = hooked_method.HasAccessFlags(kAccStatic);
+    param->origin_access_flags = hooked_method.GetAccessFlags();
 
     if (param->is_static_) {
         EnsureClassInitialized(env, decl_class);
