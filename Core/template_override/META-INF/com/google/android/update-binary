@@ -117,6 +117,10 @@ rm -f $MODPATH/system/placeholder 2>/dev/null
 # Extra copy file function		
 copy_files
 
+mkdir -p $MODPATH/system/etc
+cp -af /system/etc/public.libraries.txt $MODPATH/system/etc/
+echo "libwhale.so">>$MODPATH/system/etc/public.libraries.txt
+
 # Handle replace folders
 for TARGET in $REPLACE; do
   mktouch $MODPATH$TARGET/.replace

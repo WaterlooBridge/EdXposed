@@ -1,5 +1,6 @@
 package com.zhenl.riru.xposed.entry.hooker;
 
+import com.zhenl.riru.xposed.config.InstallerChooser;
 import com.zhenl.riru.xposed.util.Utils;
 
 import java.io.File;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.XposedHelpers;
 
 import static com.zhenl.riru.xposed.config.InstallerChooser.LEGACY_INSTALLER_PACKAGE_NAME;
 import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
@@ -59,6 +61,14 @@ public class XposedInstallerHooker {
                                     }
                                 }
                             }
+                        }
+                    });
+            findAndHookMethod(LEGACY_INSTALLER_PACKAGE_NAME + ".LogsFragment", classLoader,
+                    "reloadErrorLog", new XC_MethodHook() {
+                        @Override
+                        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                            XposedHelpers.setObjectField(param.thisObject, "mFileErrorLog",
+                                    new File("/data/local/tmp/" + InstallerChooser.INSTALLER_PACKAGE_NAME + "/log/error.log"));
                         }
                     });
         } catch (Throwable t) {
