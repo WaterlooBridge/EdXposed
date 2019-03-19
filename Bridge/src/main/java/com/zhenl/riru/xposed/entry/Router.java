@@ -49,10 +49,10 @@ public class Router {
         }
     }
 
-    public static void loadModulesSafely() {
+    public static void loadModulesSafely(boolean isInZygote) {
         try {
             // FIXME some coredomain app can't reading modules.list
-            XposedInit.loadModules();
+            XposedInit.loadModules(isInZygote);
         } catch (Exception exception) {
             Utils.logE("error loading module list", exception);
         }

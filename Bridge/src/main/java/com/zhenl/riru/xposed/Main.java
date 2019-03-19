@@ -17,6 +17,7 @@ import java.util.Arrays;
 public class Main implements KeepAll {
 
     public static String appDataDir = "";
+    public static String niceName = "";
     public static String appProcessName = "";
     private static String forkAndSpecializePramsStr = "";
     private static String forkSystemServerPramsStr = "";
@@ -53,13 +54,13 @@ public class Main implements KeepAll {
         }
     }
 
-    public static void forkAndSpecializePost(int pid, String appDataDir) {
+    public static void forkAndSpecializePost(int pid, String appDataDir, String niceName) {
         if (pid == 0) {
             Utils.logD(forkAndSpecializePramsStr + " = " + Process.myPid());
             if (isBlackWhiteListEnabled()) {
-                BlackWhiteListProxy.forkAndSpecializePost(pid, appDataDir);
+                BlackWhiteListProxy.forkAndSpecializePost(pid, appDataDir, niceName);
             } else {
-                NormalProxy.forkAndSpecializePost(pid, appDataDir);
+                NormalProxy.forkAndSpecializePost(pid, appDataDir, niceName);
             }
         } else {
             // in zygote process, res is child zygote pid

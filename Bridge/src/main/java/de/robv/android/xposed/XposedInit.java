@@ -86,11 +86,13 @@ public final class XposedInit {
      */
     private static volatile AtomicBoolean modulesLoaded = new AtomicBoolean(false);
 
-    public static void loadModules() throws IOException {
-        if (!modulesLoaded.compareAndSet(false, true)
-                && !ConfigManager.isDynamicModulesMode()) {
+    public static void loadModules(boolean isInZygote) throws IOException {
+        boolean hasLoaded = !modulesLoaded.compareAndSet(false, true);
+        // dynamic module list mode doesn't apply to loading in zygote
+        if (hasLoaded && (isInZygote || !ConfigManager.isDynamicModulesMode())) {
             return;
         }
+        // FIXME module list is cleared but never could be reload again when using dynamic-module-list under multi-user environment
         XposedBridge.clearLoadedPackages();
         final String filename = INSTALLER_DATA_BASE_DIR + "conf/modules.list";
         BaseService service = SELinuxHelper.getAppDataFileService();

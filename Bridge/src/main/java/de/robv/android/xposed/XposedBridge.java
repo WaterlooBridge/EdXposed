@@ -320,6 +320,11 @@ public final class XposedBridge {
 //		}
     }
 
+    public static void clearInitPackageResources() {
+//        synchronized (sInitPackageResourcesCallbacks) {
+//            sInitPackageResourcesCallbacks.clear();
+//        }
+    }
 
     /**
      * Basically the same as {@link Method#invoke}, but calls the original method
