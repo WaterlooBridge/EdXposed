@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import de.robv.android.xposed.XC_MethodHook.MethodHookParam;
 import de.robv.android.xposed.callbacks.XC_InitPackageResources;
@@ -151,8 +152,8 @@ public final class XposedBridge {
      * @return A set containing one object for each found method which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass,
-                                                               final XC_MethodHook callback) {
+    public static Set<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass,
+                                                           final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (final Member method : hookClass.getDeclaredMethods())
             unhooks.add(hookMethod(method, callback));
@@ -170,9 +171,9 @@ public final class XposedBridge {
      * @return A set containing one object for each found method which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static HashSet<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass,
-                                                               final String methodName,
-                                                               final XC_MethodHook callback) {
+    public static Set<XC_MethodHook.Unhook> hookAllMethods(final Class<?> hookClass,
+                                                           final String methodName,
+                                                           final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (final Member method : hookClass.getDeclaredMethods())
             if (method.getName().equals(methodName))
@@ -188,8 +189,8 @@ public final class XposedBridge {
      * @return A set containing one object for each found constructor which can be used to unhook it.
      */
     @SuppressWarnings("all")
-    public static HashSet<XC_MethodHook.Unhook> hookAllConstructors(final Class<?> hookClass,
-                                                                    final XC_MethodHook callback) {
+    public static Set<XC_MethodHook.Unhook> hookAllConstructors(final Class<?> hookClass,
+                                                                final XC_MethodHook callback) {
         final HashSet<XC_MethodHook.Unhook> unhooks = new HashSet<>();
         for (final Member constructor : hookClass.getDeclaredConstructors())
             unhooks.add(hookMethod(constructor, callback));
