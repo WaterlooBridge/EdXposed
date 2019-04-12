@@ -49,6 +49,8 @@ public final class XposedBridge {
     private static final Map<Member, CopyOnWriteSortedSet<XC_MethodHook>> sHookedMethodCallbacks = new HashMap<>();
     public static final CopyOnWriteSortedSet<XC_LoadPackage> sLoadedPackageCallbacks = new CopyOnWriteSortedSet<>();
 
+    private static final Map<Member, Long> sHookedMethodSlotMap = new HashMap<>();
+
     /**
      * Returns the currently installed version of the Xposed framework.
      */
@@ -117,6 +119,9 @@ public final class XposedBridge {
             if (slot <= 0) {
                 throw new IllegalStateException("Failed to hook method: " + hookMethod);
             }
+            synchronized (sHookedMethodSlotMap) {
+                sHookedMethodSlotMap.put(hookMethod, slot);
+            }
         }
 
         return callback.new Unhook(hookMethod);
@@ -130,6 +135,9 @@ public final class XposedBridge {
      */
     @SuppressWarnings("all")
     public static void unhookMethod(final Member hookMethod, final XC_MethodHook callback) {
+        synchronized (sHookedMethodSlotMap) {
+            sHookedMethodSlotMap.remove(hookMethod);
+        }
         CopyOnWriteSortedSet<XC_MethodHook> callbacks;
         synchronized (sHookedMethodCallbacks) {
             callbacks = sHookedMethodCallbacks.get(hookMethod);
@@ -341,7 +349,7 @@ public final class XposedBridge {
     public static Object invokeOriginalMethod(final Member method, final Object thisObject,
                                               final Object[] args)
             throws NullPointerException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-        long slot = WhaleRuntime.getMethodSlot(method);
+        long slot = sHookedMethodSlotMap.get(method);
         return WhaleRuntime.invokeOriginalMethodNative(slot, thisObject, args);
     }
 
