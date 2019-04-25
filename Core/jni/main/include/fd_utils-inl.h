@@ -33,7 +33,9 @@
 
 static const char* kPathPrefixWhitelist[] = {
         "/data/app/",
-        "/data/app-private/"
+        "/data/app-private/",
+        "/system/lib/libart.so",
+        "/system/lib64/libart.so"
 };
 
 static const char* kFdPath = "/proc/self/fd";
