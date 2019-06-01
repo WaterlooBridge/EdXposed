@@ -7,7 +7,7 @@ MODDIR=${0%/*}
 # More info in the main Magisk thread
 
 # EdXposed Version
-edxp_ver="1.0.5_beta"
+edxp_ver="1.0.6_beta"
 
 # necessary for using mmap in system_server process
 supolicy --live "allow system_server system_server process {execmem}"

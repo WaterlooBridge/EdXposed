@@ -55,7 +55,7 @@ bool ArtRuntime::OnLoad(JavaVM *vm, JNIEnv *env, jclass java_class) {
     api_level_ = GetAndroidApiLevel();
     PreLoadRequiredStuff(env);
     const char *art_path = kLibArtPath;
-    art_elf_image_ = WDynamicLibOpen(art_path);
+    void* art_elf_image_ = WDynamicLibOpen(art_path);
     if (art_elf_image_ == nullptr) {
         LOG(ERROR) << "Unable to read data from libart.so.";
         return false;
@@ -175,6 +175,7 @@ bool ArtRuntime::OnLoad(JavaVM *vm, JNIEnv *env, jclass java_class) {
     CHECK_FIELD(quick_generic_jni_trampoline, nullptr)
     class_linker_objects_.quick_generic_jni_trampoline_ = quick_generic_jni_trampoline;
 
+    WDynamicLibClose(art_elf_image_);
     pthread_mutex_init(&mutex, nullptr);
 //    EnforceDisableHiddenAPIPolicy();
     return true;
@@ -422,6 +423,8 @@ ALWAYS_INLINE bool ArtRuntime::EnforceDisableHiddenAPIPolicyImpl() {
     }
     void *symbol = nullptr;
 
+    void* art_elf_image_ = WDynamicLibOpen(kLibArtPath);
+
     // Android P : Preview 1 ~ 4 version
     symbol = WDynamicLibSymbol(
             art_elf_image_,
@@ -454,6 +457,7 @@ ALWAYS_INLINE bool ArtRuntime::EnforceDisableHiddenAPIPolicyImpl() {
     if (symbol) {
         WInlineHookFunction(symbol, reinterpret_cast<void *>(OnInvokeHiddenAPI), nullptr);
     }
+    WDynamicLibClose(art_elf_image_);
     return symbol != nullptr;
 }
 

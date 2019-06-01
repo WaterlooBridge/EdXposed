@@ -1,5 +1,5 @@
 name=Ed Xposed
-version=v1.0.5_beta
-versionCode=6
+version=v1.0.6_beta
+versionCode=7
 author=zhenl
 description=Magisk version of Xposed. Require Riru - Core installed.

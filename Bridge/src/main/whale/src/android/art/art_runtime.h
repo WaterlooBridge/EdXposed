@@ -130,7 +130,6 @@ class ArtRuntime final {
     jclass java_class_;
     jmethodID bridge_method_;
     s4 api_level_;
-    void *art_elf_image_;
     NativeBridgeCallbacks OPTION *android_bridge_callbacks_;
     ArtSymbolResolver art_symbol_resolver_;
     RuntimeObjects runtime_objects_;
