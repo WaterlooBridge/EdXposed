@@ -136,9 +136,6 @@ public final class XposedBridge {
      */
     @SuppressWarnings("all")
     public static void unhookMethod(final Member hookMethod, final XC_MethodHook callback) {
-        synchronized (sHookedMethodSlotMap) {
-            sHookedMethodSlotMap.remove(hookMethod);
-        }
         CopyOnWriteSortedSet<XC_MethodHook> callbacks;
         synchronized (sHookedMethodCallbacks) {
             callbacks = sHookedMethodCallbacks.get(hookMethod);
