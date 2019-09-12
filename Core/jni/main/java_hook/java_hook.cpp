@@ -136,6 +136,11 @@ void loadDexAndInit(JNIEnv *env, const char *dexPath) {
     jstring jarpath_str = env->NewStringUTF(dexPath);
     jobject myClassLoader = env->NewObject(clzPathClassLoader, mdinitPathCL,
                                            jarpath_str, NULL, systemClassLoader);
+    
+    env->DeleteLocalRef(clzClassLoader);
+    env->DeleteLocalRef(systemClassLoader);
+    env->DeleteLocalRef(clzPathClassLoader);
+    
     if (NULL == myClassLoader) {
         LOGE("PathClassLoader creation failed!!!");
         return;
