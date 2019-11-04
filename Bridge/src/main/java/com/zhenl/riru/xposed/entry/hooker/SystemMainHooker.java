@@ -1,11 +1,9 @@
 package com.zhenl.riru.xposed.entry.hooker;
 
-import android.app.ActivityThread;
-
-import com.zhenl.riru.common.KeepMembers;
 import com.zhenl.riru.xposed.entry.Router;
 import com.zhenl.riru.xposed.util.PrebuiltMethodsDeopter;
 
+import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 
 import static de.robv.android.xposed.XposedInit.logD;
@@ -14,20 +12,20 @@ import static de.robv.android.xposed.XposedInit.logE;
 
 // system_server initialization
 // ed: only support sdk >= 21 for now
-public class SystemMainHooker implements KeepMembers {
+public class SystemMainHooker extends XC_MethodHook {
 
     public static String className = "android.app.ActivityThread";
     public static String methodName = "systemMain";
     public static String methodSig = "()Landroid/app/ActivityThread;";
 
-    public static ClassLoader systemServerCL;
+    public static volatile ClassLoader systemServerCL;
 
-    public static ActivityThread hook() {
+    @Override
+    protected void afterHookedMethod(MethodHookParam param) throws Throwable {
         if (XposedBridge.disableHooks) {
-            return backup();
+            return;
         }
         logD("ActivityThread#systemMain() starts");
-        ActivityThread activityThread = backup();
         try {
             // get system_server classLoader
             systemServerCL = Thread.currentThread().getContextClassLoader();
@@ -37,10 +35,5 @@ public class SystemMainHooker implements KeepMembers {
         } catch (Throwable t) {
             logE("error when hooking systemMain", t);
         }
-        return activityThread;
-    }
-
-    public static ActivityThread backup() {
-        return null;
     }
 }

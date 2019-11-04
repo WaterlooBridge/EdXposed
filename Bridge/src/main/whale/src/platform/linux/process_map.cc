@@ -1,6 +1,7 @@
 #include <string>
 #include <base/logging.h>
 #include <climits>
+#include <sys/mman.h>
 #include "platform/linux/process_map.h"
 #include "process_map.h"
 
@@ -35,7 +36,10 @@ std::unique_ptr<MemoryRange> FindExecuteMemoryRange(const char *name) {
                 if (strncmp(mapname, "/system/fake-libs/", 18) == 0) {
                     return true;
                 }
-                if (strstr(mapname, name) && strstr(perm, "x") && strstr(perm, "r")) {
+                if (strstr(mapname, name) && strstr(perm, "x")) {
+                    if (!strstr(perm, "r") && mprotect(reinterpret_cast<void *>(begin), end - begin,
+                                                       PROT_READ | PROT_EXEC) == -1)
+                        return true;
                     range->path_ = strdup(mapname);
                     range->base_ = begin;
                     range->end_ = end;
@@ -58,7 +62,7 @@ ForeachMemoryRange(std::function<bool(uintptr_t, uintptr_t, char *, char *)> cal
                 break;
             sscanf(buf, "%lx-%lx %s %lx %s %ld %s", &begin, &end, perm,
                    &foo, dev, &inode, mapname);
-            if (!callback(begin, end, perm, mapname)) {
+            if (!callback(begin - foo, end - foo, perm, mapname)) {
                 break;
             }
         }

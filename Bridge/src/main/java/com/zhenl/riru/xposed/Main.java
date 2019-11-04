@@ -1,16 +1,13 @@
 package com.zhenl.riru.xposed;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
 import android.os.Process;
 
 import com.zhenl.riru.common.KeepAll;
-import com.zhenl.riru.xposed.core.HookMethodResolver;
 import com.zhenl.riru.xposed.proxy.BlackWhiteListProxy;
 import com.zhenl.riru.xposed.proxy.NormalProxy;
 import com.zhenl.riru.xposed.util.Utils;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 
 @SuppressLint("DefaultLocale")
@@ -21,11 +18,6 @@ public class Main implements KeepAll {
     public static String appProcessName = "";
     private static String forkAndSpecializePramsStr = "";
     private static String forkSystemServerPramsStr = "";
-
-    static {
-        init(Build.VERSION.SDK_INT);
-        HookMethodResolver.init();
-    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // entry points
@@ -102,14 +94,8 @@ public class Main implements KeepAll {
     // native methods
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    public static native boolean backupAndHookNative(Object target, Method hook, Method backup);
-
-    public static native void ensureMethodCached(Method hook, Method backup);
-
     // JNI.ToReflectedMethod() could return either Method or Constructor
     public static native Object findMethodNative(Class targetClass, String methodName, String methodSig);
-
-    private static native void init(int SDK_version);
 
     public static native String getInstallerPkgName();
 

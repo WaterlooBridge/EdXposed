@@ -1,7 +1,7 @@
 import org.gradle.internal.os.OperatingSystem
 
 apply plugin: 'com.android.library'
-version "v1.0.6_beta"
+version "v1.0.7_beta"
 extensions["module_name"] = "EdXposed"
 android {
     compileSdkVersion 28

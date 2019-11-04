@@ -6,10 +6,10 @@ import android.content.ComponentName;
 import android.content.pm.ApplicationInfo;
 import android.content.res.CompatibilityInfo;
 
-import com.zhenl.riru.common.KeepMembers;
 import com.zhenl.riru.xposed.Main;
 import com.zhenl.riru.xposed.util.Utils;
 
+import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
@@ -23,20 +23,21 @@ import static de.robv.android.xposed.XposedInit.logD;
 import static de.robv.android.xposed.XposedInit.logE;
 
 // normal process initialization (for new Activity, Service, BroadcastReceiver etc.)
-public class HandleBindAppHooker implements KeepMembers {
+public class HandleBindAppHooker extends XC_MethodHook {
 
     public static String className = "android.app.ActivityThread";
     public static String methodName = "handleBindApplication";
     public static String methodSig = "(Landroid/app/ActivityThread$AppBindData;)V";
 
-    public static void hook(Object thiz, Object bindData) {
+    @Override
+    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
         if (XposedBlackListHooker.shouldDisableHooks("")) {
-            backup(thiz, bindData);
             return;
         }
         try {
             logD("ActivityThread#handleBindApplication() starts");
-            ActivityThread activityThread = (ActivityThread) thiz;
+            ActivityThread activityThread = (ActivityThread) param.thisObject;
+            Object bindData = param.args[0];
             ApplicationInfo appInfo = (ApplicationInfo) getObjectField(bindData, "appInfo");
             // save app process name here for later use
             Main.appProcessName = (String) getObjectField(bindData, "processName");
@@ -79,13 +80,9 @@ public class HandleBindAppHooker implements KeepMembers {
             if (reportedPackageName.equals(BLACK_LIST_PACKAGE_NAME)) {
                 XposedBlackListHooker.hook(lpparam.classLoader);
             }
+
         } catch (Throwable t) {
             logE("error when hooking bindApp", t);
-        } finally {
-            backup(thiz, bindData);
         }
-    }
-
-    public static void backup(Object thiz, Object bindData) {
     }
 }

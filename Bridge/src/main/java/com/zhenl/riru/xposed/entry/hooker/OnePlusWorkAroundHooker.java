@@ -1,8 +1,8 @@
 package com.zhenl.riru.xposed.entry.hooker;
 
-import com.zhenl.riru.common.KeepMembers;
 import com.zhenl.riru.xposed.entry.Router;
 
+import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
 
 import static de.robv.android.xposed.XposedInit.logD;
@@ -22,21 +22,18 @@ import static de.robv.android.xposed.XposedInit.logD;
  * open of /dev/binder and we haven't found side effects yet.
  * Other roms might share the same problems but not reported too.
  */
-public class OnePlusWorkAroundHooker implements KeepMembers {
+public class OnePlusWorkAroundHooker extends XC_MethodHook {
 
     public static String className = "dalvik.system.BaseDexClassLoader";
     public static String methodName = "inCompatConfigList";
     public static String methodSig = "(ILjava/lang/String;)Z";
 
-    public static boolean hook(int type, String packageName) {
+    @Override
+    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
         if (XposedBridge.disableHooks || Router.forkCompleted) {
-            return backup(type, packageName);
+            return;
         }
         logD("BaseDexClassLoader#inCompatConfigList() starts");
-        return false;
-    }
-
-    public static boolean backup(int type, String packageName) {
-        return false;
+        param.setResult(false);
     }
 }

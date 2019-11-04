@@ -2,8 +2,7 @@ package com.zhenl.riru.xposed.entry.hooker;
 
 import android.os.Build;
 
-import com.zhenl.riru.common.KeepMembers;
-
+import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
@@ -15,15 +14,14 @@ import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 import static de.robv.android.xposed.XposedInit.loadedPackagesInProcess;
 import static de.robv.android.xposed.XposedInit.logE;
 
-public class StartBootstrapServicesHooker implements KeepMembers {
+public class StartBootstrapServicesHooker extends XC_MethodHook {
     public static String className = "com.android.server.SystemServer";
     public static String methodName = "startBootstrapServices";
     public static String methodSig = "()V";
 
-    public static void hook(Object systemServer) {
-
+    @Override
+    protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
         if (XposedBridge.disableHooks) {
-            backup(systemServer);
             return;
         }
 
@@ -55,12 +53,6 @@ public class StartBootstrapServicesHooker implements KeepMembers {
             }
         } catch (Throwable t) {
             logE("error when hooking startBootstrapServices", t);
-        } finally {
-            backup(systemServer);
         }
-    }
-
-    public static void backup(Object systemServer) {
-
     }
 }

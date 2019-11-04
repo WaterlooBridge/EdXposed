@@ -77,20 +77,6 @@ static bool disableHiddenAPIPolicyImpl(int api_level, void *artHandle,
         return true;
     }
     void *symbol = nullptr;
-    // Android P : Preview 1 ~ 4 version
-    symbol = dlsym(artHandle,
-                   "_ZN3art9hiddenapi25ShouldBlockAccessToMemberINS_8ArtFieldEEEbPT_PNS_6ThreadENSt3__18functionIFbS6_EEENS0_12AccessMethodE");
-    if (symbol) {
-        hookFun(symbol, reinterpret_cast<void *>(onInvokeHiddenAPI), nullptr);
-    }
-    symbol = dlsym(artHandle,
-                   "_ZN3art9hiddenapi25ShouldBlockAccessToMemberINS_9ArtMethodEEEbPT_PNS_6ThreadENSt3__18functionIFbS6_EEENS0_12AccessMethodE"
-    );
-
-    if (symbol) {
-        hookFun(symbol, reinterpret_cast<void *>(onInvokeHiddenAPI), nullptr);
-        return true;
-    }
     // Android P : Release version
     symbol = dlsym(artHandle,
                    "_ZN3art9hiddenapi6detail19GetMemberActionImplINS_8ArtFieldEEENS0_6ActionEPT_NS_20HiddenApiAccessFlags7ApiListES4_NS0_12AccessMethodE"
@@ -100,6 +86,19 @@ static bool disableHiddenAPIPolicyImpl(int api_level, void *artHandle,
     }
     symbol = dlsym(artHandle,
                    "_ZN3art9hiddenapi6detail19GetMemberActionImplINS_9ArtMethodEEENS0_6ActionEPT_NS_20HiddenApiAccessFlags7ApiListES4_NS0_12AccessMethodE"
+    );
+    if (symbol) {
+        hookFun(symbol, reinterpret_cast<void *>(onInvokeHiddenAPI), nullptr);
+    }
+    // Android Q : Release version
+    symbol = dlsym(artHandle,
+                   "_ZN3art9hiddenapi6detail28ShouldDenyAccessToMemberImplINS_8ArtFieldEEEbPT_NS0_7ApiListENS0_12AccessMethodE"
+    );
+    if (symbol) {
+        hookFun(symbol, reinterpret_cast<void *>(onInvokeHiddenAPI), nullptr);
+    }
+    symbol = dlsym(artHandle,
+                   "_ZN3art9hiddenapi6detail28ShouldDenyAccessToMemberImplINS_9ArtMethodEEEbPT_NS0_7ApiListENS0_12AccessMethodE"
     );
     if (symbol) {
         hookFun(symbol, reinterpret_cast<void *>(onInvokeHiddenAPI), nullptr);
@@ -147,8 +146,11 @@ void hookInstrumentation(int api_level, void *artHandle, void (*hookFun)(void *,
         // 5.x not supported
         return;
     }
-    void *classLinkerCstSym = dlsym(artHandle,
-                                    "_ZN3art11ClassLinkerC2EPNS_11InternTableE");
+    void *classLinkerCstSym = nullptr;
+    if (api_level >= ANDROID_Q)
+        classLinkerCstSym = dlsym(artHandle, "_ZN3art11ClassLinkerC2EPNS_11InternTableEb");
+    else
+        classLinkerCstSym = dlsym(artHandle, "_ZN3art11ClassLinkerC2EPNS_11InternTableE");
     if (!classLinkerCstSym) {
         LOGE("can't get classLinkerCstSym: %s", dlerror());
         return;
@@ -262,22 +264,27 @@ void getSuspendSyms(int api_level, void *artHandle, void (*hookFun)(void *, void
     }
 }
 
-void install_inline_hooks() {
+void install_art_hooks(void *artHandle) {
+    int api_level = GetAndroidApiLevel();
     if (inlineHooksInstalled) {
         LOGI("inline hooks installed, skip");
         return;
     }
-    LOGI("start to install inline hooks");
-    int api_level = GetAndroidApiLevel();
-    if (api_level < ANDROID_LOLLIPOP) {
-        LOGE("api level not supported: %d, skip", api_level);
-        return;
-    }
-    LOGI("using api level %d", api_level);
     void *whaleHandle = dlopen(kLibWhalePath, RTLD_LAZY | RTLD_GLOBAL);
     if (!whaleHandle) {
         LOGE("can't open libwhale: %s", dlerror());
         return;
+    }
+    if (api_level >= ANDROID_Q && strstr(kLibArtPath_Q, "lib64")) {
+        void *libOpenSym = dlsym(whaleHandle, "WDynamicLibOpen");
+        if (!libOpenSym)
+            return;
+        void *art_elf_image_ = reinterpret_cast<void *(*)(const char *)>(libOpenSym)(kLibArtPath_Q);
+        if (art_elf_image_ == nullptr)
+            return;
+        void *libCloseSym = dlsym(whaleHandle, "WDynamicLibClose");
+        if (libCloseSym)
+            reinterpret_cast<void (*)(void *)>(libCloseSym)(art_elf_image_);
     }
     void *hookFunSym = dlsym(whaleHandle, "WInlineHookFunction");
     if (!hookFunSym) {
@@ -286,7 +293,6 @@ void install_inline_hooks() {
     }
     void (*hookFun)(void *, void *, void **) = reinterpret_cast<void (*)(void *, void *,
                                                                          void **)>(hookFunSym);
-    void *artHandle = dlopen(kLibArtPath, RTLD_LAZY | RTLD_GLOBAL);
     if (!artHandle) {
         LOGE("can't open libart: %s", dlerror());
         return;
@@ -301,7 +307,64 @@ void install_inline_hooks() {
         LOGE("disableHiddenAPIPolicyImpl failed.");
     }
     dlclose(whaleHandle);
-    dlclose(artHandle);
+    inlineHooksInstalled = true;
     LOGI("install inline hooks done");
+}
+
+void *(*mydlopenBackup)(const char *file_name, int flags, const void *caller) = nullptr;
+
+void *mydlopen(const char *file_name, int flags, const void *caller) {
+    void *handle = mydlopenBackup(file_name, flags, caller);
+    if (file_name != nullptr && std::string(file_name).find("libart.so") != std::string::npos) {
+        install_art_hooks(handle);
+    }
+    return handle;
+}
+
+void install_inline_hooks() {
+    if (inlineHooksInstalled) {
+        LOGI("inline hooks installed, skip");
+        return;
+    }
+    LOGI("start to install inline hooks");
+    int api_level = GetAndroidApiLevel();
+    if (api_level < ANDROID_LOLLIPOP) {
+        LOGE("api level not supported: %d, skip", api_level);
+        return;
+    }
+    LOGI("using api level %d", api_level);
+
+    if (api_level >= ANDROID_Q) {
+        void *whaleHandle = dlopen(kLibWhalePath, RTLD_LAZY | RTLD_GLOBAL);
+        if (!whaleHandle) {
+            LOGE("can't open libwhale: %s", dlerror());
+            return;
+        }
+        void *hookFunSym = dlsym(whaleHandle, "WInlineHookFunction");
+        if (!hookFunSym) {
+            LOGE("can't get WInlineHookFunction: %s", dlerror());
+            return;
+        }
+        void (*hookFun)(void *, void *, void **) = reinterpret_cast<void (*)(void *, void *,
+                                                                             void **)>(hookFunSym);
+        void *dlHandle = dlopen(kLibDlPath, RTLD_LAZY | RTLD_GLOBAL);
+        if (!dlHandle) {
+            LOGE("can't open libdl: %s", dlerror());
+            return;
+        }
+        void *dlopenSym = dlsym(dlHandle, "__loader_dlopen");
+        if (!dlopenSym) {
+            LOGE("can't get dlopenFunction: %s", dlerror());
+            return;
+        }
+        (*hookFun)(dlopenSym, reinterpret_cast<void *>(mydlopen),
+                   reinterpret_cast<void **>(&mydlopenBackup));
+        dlclose(whaleHandle);
+        dlclose(dlHandle);
+    } else {
+        void *artHandle = dlopen(kLibArtPath, RTLD_LAZY | RTLD_GLOBAL);
+        install_art_hooks(artHandle);
+        dlclose(artHandle);
+    }
 }
 

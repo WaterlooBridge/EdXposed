@@ -11,11 +11,6 @@
 #include "include/logging.h"
 #include "include/fd_utils-inl.h"
 
-extern "C"
-{
-#include "../yahfa/HookMain.h"
-}
-
 jobject gInjectDexClassLoader;
 
 static bool isInited = false;
@@ -34,6 +29,33 @@ void reopenFilesAfterForkNative(JNIEnv *, jclass) {
     gClosedFdTable->Reopen();
     delete gClosedFdTable;
     gClosedFdTable = nullptr;
+}
+
+jobject yahfa_findMethodNative(JNIEnv *env, jclass clazz,
+                               jclass targetClass, jstring methodName,
+                               jstring methodSig) {
+    const char *c_methodName = env->GetStringUTFChars(methodName, nullptr);
+    const char *c_methodSig = env->GetStringUTFChars(methodSig, nullptr);
+    jobject ret = nullptr;
+
+
+    //Try both GetMethodID and GetStaticMethodID -- Whatever works :)
+    jmethodID method = env->GetMethodID(targetClass, c_methodName, c_methodSig);
+    if (!env->ExceptionCheck()) {
+        ret = env->ToReflectedMethod(targetClass, method, JNI_FALSE);
+    } else {
+        env->ExceptionClear();
+        method = env->GetStaticMethodID(targetClass, c_methodName, c_methodSig);
+        if (!env->ExceptionCheck()) {
+            ret = env->ToReflectedMethod(targetClass, method, JNI_TRUE);
+        } else {
+            env->ExceptionClear();
+        }
+    }
+
+    env->ReleaseStringUTFChars(methodName, c_methodName);
+    env->ReleaseStringUTFChars(methodSig, c_methodSig);
+    return ret;
 }
 
 jlong suspendAllThreads(JNIEnv *, jclass) {
@@ -60,24 +82,9 @@ int waitForGcToComplete(JNIEnv *, jclass, jlong thread) {
 
 static JNINativeMethod hookMethods[] = {
         {
-                "init",
-                "(I)V",
-                (void *) Java_lab_galaxy_yahfa_HookMain_init
-        },
-        {
-                "backupAndHookNative",
-                "(Ljava/lang/Object;Ljava/lang/reflect/Method;Ljava/lang/reflect/Method;)Z",
-                (void *) Java_lab_galaxy_yahfa_HookMain_backupAndHookNative
-        },
-        {
                 "findMethodNative",
                 "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/Object;",
-                (void *) Java_lab_galaxy_yahfa_HookMain_findMethodNative
-        },
-        {
-                "ensureMethodCached",
-                "(Ljava/lang/reflect/Method;Ljava/lang/reflect/Method;)V",
-                (void *) Java_lab_galaxy_yahfa_HookMain_ensureMethodCached
+                (void *) yahfa_findMethodNative
         },
         {
                 "isBlackWhiteListEnabled", "()Z", (void *) is_black_white_list_enabled
@@ -136,11 +143,11 @@ void loadDexAndInit(JNIEnv *env, const char *dexPath) {
     jstring jarpath_str = env->NewStringUTF(dexPath);
     jobject myClassLoader = env->NewObject(clzPathClassLoader, mdinitPathCL,
                                            jarpath_str, NULL, systemClassLoader);
-    
+
     env->DeleteLocalRef(clzClassLoader);
     env->DeleteLocalRef(systemClassLoader);
     env->DeleteLocalRef(clzPathClassLoader);
-    
+
     if (NULL == myClassLoader) {
         LOGE("PathClassLoader creation failed!!!");
         return;
@@ -151,7 +158,7 @@ void loadDexAndInit(JNIEnv *env, const char *dexPath) {
     jclass entry_class = findClassFromLoader(env, myClassLoader, ENTRY_CLASS_NAME);
     if (NULL != entry_class) {
         LOGD("HookEntry Class %p", entry_class);
-        env->RegisterNatives(entry_class, hookMethods, 14);
+        env->RegisterNatives(entry_class, hookMethods, 11);
         isInited = true;
         LOGD("RegisterNatives succeed for HookEntry.");
     } else {

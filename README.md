@@ -2,6 +2,12 @@
 
 A Riru module trying to provide a ART hooking framework (mainly for Android Pie) which delivers consistent APIs with the OG Xposed, leveraging Whale hooking framework.
 
+## Supported versions
+
+- Android Oreo (8.x)
+- Android Pie (9.0)
+- Android 10
+
 ## Credits 
 
 - [Whale](https://github.com/asLody/whale): the core java hooking framework and inline hooking

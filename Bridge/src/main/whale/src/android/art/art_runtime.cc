@@ -54,7 +54,7 @@ bool ArtRuntime::OnLoad(JavaVM *vm, JNIEnv *env, jclass java_class) {
     }
     api_level_ = GetAndroidApiLevel();
     PreLoadRequiredStuff(env);
-    const char *art_path = kLibArtPath;
+    const char *art_path = api_level_ >= ANDROID_Q ? kLibArtPath_Q : kLibArtPath;
     void* art_elf_image_ = WDynamicLibOpen(art_path);
     if (art_elf_image_ == nullptr) {
         LOG(ERROR) << "Unable to read data from libart.so.";
@@ -70,6 +70,8 @@ bool ArtRuntime::OnLoad(JavaVM *vm, JNIEnv *env, jclass java_class) {
     size_t entrypoint_filed_size = (api_level_ <= ANDROID_LOLLIPOP) ? 8
                                                                     : kPointerSize;
     u4 expected_access_flags = kAccPrivate | kAccStatic | kAccNative;
+    if (api_level_ >= ANDROID_Q)
+        expected_access_flags |= kAccPublicApi;
     jmethodID reserved0 = env->GetStaticMethodID(java_class, kMethodReserved0, "()V");
     jmethodID reserved1 = env->GetStaticMethodID(java_class, kMethodReserved1, "()V");
 
