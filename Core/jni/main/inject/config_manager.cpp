@@ -46,22 +46,22 @@ static vector<string> white_list_default;
 static vector<string> black_list_default;
 
 static const char *get_installer_package_name() {
-    snprintf(data_test_path, PATH_MAX, config_path_tpl, data_path_prefix,
-             PRIMARY_INSTALLER_PKG_NAME, "/");
+    snprintf(data_test_path, PATH_MAX, "%s%s", data_path_prefix,
+             PRIMARY_INSTALLER_PKG_NAME);
     if (access(data_test_path, F_OK) == 0) {
         LOGI("using installer "
                      PRIMARY_INSTALLER_PKG_NAME);
         return PRIMARY_INSTALLER_PKG_NAME;
     }
-    snprintf(data_test_path, PATH_MAX, config_path_tpl, data_path_prefix,
-             SECONDARY_INSTALLER_PKG_NAME, "/");
+    snprintf(data_test_path, PATH_MAX, "%s%s", data_path_prefix,
+             SECONDARY_INSTALLER_PKG_NAME);
     if (access(data_test_path, F_OK) == 0) {
         LOGI("using installer "
                      SECONDARY_INSTALLER_PKG_NAME);
         return SECONDARY_INSTALLER_PKG_NAME;
     }
-    snprintf(data_test_path, PATH_MAX, config_path_tpl, data_path_prefix,
-             LEGACY_INSTALLER_PKG_NAME, "/");
+    snprintf(data_test_path, PATH_MAX, "%s%s", data_path_prefix,
+             LEGACY_INSTALLER_PKG_NAME);
     if (access(data_test_path, F_OK) == 0) {
         LOGI("using installer "
                      LEGACY_INSTALLER_PKG_NAME);
