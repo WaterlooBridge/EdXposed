@@ -235,6 +235,9 @@ ArtRuntime::HookMethod(JNIEnv *env, jclass decl_class, jobject hooked_java_metho
     if (api_level_ >= ANDROID_P) {
         access_flags &= ~kAccCriticalNative_P;
     }
+    if (api_level_ >= ANDROID_Q) {
+        access_flags &= ~kAccFastInterpreterToInterpreterInvoke;
+    }
     hooked_method.SetAccessFlags(access_flags);
     hooked_method.SetEntryPointFromQuickCompiledCode(
             class_linker_objects_.quick_generic_jni_trampoline_
