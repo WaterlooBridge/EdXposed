@@ -30,7 +30,7 @@ public class StartBootstrapServicesHooker extends XC_MethodHook {
         try {
             loadedPackagesInProcess.add("android");
 
-            replaceParentClassLoader(SystemMainHooker.systemServerCL);
+//            replaceParentClassLoader(SystemMainHooker.systemServerCL);
 
             XC_LoadPackage.LoadPackageParam lpparam = new XC_LoadPackage.LoadPackageParam(XposedBridge.sLoadedPackageCallbacks);
             lpparam.packageName = "android";

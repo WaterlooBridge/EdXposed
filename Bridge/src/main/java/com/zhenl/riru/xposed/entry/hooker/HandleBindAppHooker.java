@@ -64,7 +64,7 @@ public class HandleBindAppHooker extends XC_MethodHook {
             loadedPackagesInProcess.add(reportedPackageName);
             LoadedApk loadedApk = activityThread.getPackageInfoNoCheck(appInfo, compatInfo);
 
-            replaceParentClassLoader(loadedApk.getClassLoader());
+//            replaceParentClassLoader(loadedApk.getClassLoader());
 
             XC_LoadPackage.LoadPackageParam lpparam = new XC_LoadPackage.LoadPackageParam(XposedBridge.sLoadedPackageCallbacks);
             lpparam.packageName = reportedPackageName;

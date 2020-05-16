@@ -66,7 +66,7 @@ public class LoadedApkConstructorHooker extends XC_MethodHook {
                 return;
             }
 
-            replaceParentClassLoader(loadedApk.getClassLoader());
+//            replaceParentClassLoader(loadedApk.getClassLoader());
 
             XC_LoadPackage.LoadPackageParam lpparam = new XC_LoadPackage.LoadPackageParam(XposedBridge.sLoadedPackageCallbacks);
             lpparam.packageName = packageName;
