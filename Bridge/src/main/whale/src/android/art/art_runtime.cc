@@ -54,7 +54,13 @@ bool ArtRuntime::OnLoad(JavaVM *vm, JNIEnv *env, jclass java_class) {
     }
     api_level_ = GetAndroidApiLevel();
     PreLoadRequiredStuff(env);
-    const char *art_path = api_level_ >= ANDROID_Q ? kLibArtPath_Q : kLibArtPath;
+    const char *art_path;
+    if (api_level_ >= ANDROID_R)
+        art_path = kLibArtPath_R;
+    else if (api_level_ >= ANDROID_Q)
+        art_path = kLibArtPath_Q;
+    else
+        art_path = kLibArtPath;
     void* art_elf_image_ = WDynamicLibOpen(art_path);
     if (art_elf_image_ == nullptr) {
         LOG(ERROR) << "Unable to read data from libart.so.";
@@ -72,6 +78,7 @@ bool ArtRuntime::OnLoad(JavaVM *vm, JNIEnv *env, jclass java_class) {
     u4 expected_access_flags = kAccPrivate | kAccStatic | kAccNative;
     if (api_level_ >= ANDROID_Q)
         expected_access_flags |= kAccPublicApi;
+    hookEncodeArtMethod(art_elf_image_);
     jmethodID reserved0 = env->GetStaticMethodID(java_class, kMethodReserved0, "()V");
     jmethodID reserved1 = env->GetStaticMethodID(java_class, kMethodReserved1, "()V");
 
@@ -475,6 +482,20 @@ ptr_t ArtRuntime::CloneArtObject(ptr_t art_object) {
         return symbols->Object_CloneWithClass(art_object, GetCurrentArtThread(), nullptr);
     }
     return symbols->Object_CloneWithSize(art_object, GetCurrentArtThread(), 0);
+}
+
+jmethodID OnInvokeEncodeMethodId(void *thiz, void *method) {
+    return reinterpret_cast<jmethodID>(method);
+}
+
+void ArtRuntime::hookEncodeArtMethod(void *art_elf_image_) {
+    void *symbol = nullptr;
+    symbol = WDynamicLibSymbol(art_elf_image_,
+                               "_ZN3art3jni12JniIdManager14EncodeMethodIdEPNS_9ArtMethodE");
+    if (symbol) {
+        WInlineHookFunction(symbol, reinterpret_cast<void *>(OnInvokeEncodeMethodId),
+                            nullptr);
+    }
 }
 
 }  // namespace art

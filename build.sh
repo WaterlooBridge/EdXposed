@@ -15,28 +15,12 @@ VERSION=$2
 
 ZIP_NAME_PREFIX=$3
 
-LIBS_OUTPUT=$MODULE_NAME/build/ndkBuild/libs
-NDK_OUT=$MODULE_NAME/build/ndkBuild/obj
-
-# build
-NDK_BUILD=~/Android/sdk/ndk-bundle/ndk-build
-[[ "$OSTYPE" == "msys" ]] && NDK_BUILD=ndk-build.cmd
-[[ "$OSTYPE" == "cygwin" ]] && NDK_BUILD=ndk-build.cmd
-
-(cd $MODULE_NAME; $NDK_BUILD NDK_LIBS_OUT=build/ndkBuild/libs NDK_OUT=build/ndkBuild/obj)
-
 # create tmp dir
 TMP_DIR=build/zip
 TMP_DIR_MAGISK=$TMP_DIR/magisk
 
 rm -rf $TMP_DIR
 mkdir -p $TMP_DIR
-
-# copy files
-mkdir -p $TMP_DIR_MAGISK/system/lib64
-mkdir -p $TMP_DIR_MAGISK/system/lib
-cp -a $LIBS_OUTPUT/arm64-v8a/. $TMP_DIR_MAGISK/system/lib64
-cp -a $LIBS_OUTPUT/armeabi-v7a/. $TMP_DIR_MAGISK/system/lib
 
 # run custom script
 if [ -f $MODULE_NAME/build-module.sh ]; then

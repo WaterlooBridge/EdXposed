@@ -7,7 +7,7 @@ MODDIR=${0%/*}
 # More info in the main Magisk thread
 
 # EdXposed Version
-edxp_ver="1.0.8_beta"
+edxp_ver="1.1.0_beta"
 
 # necessary for using mmap in system_server process
 # supolicy --live "allow system_server system_server process {execmem}"
@@ -55,4 +55,4 @@ echo "Device: ${device}">>${file}
 echo "Manufacturer: ${manufacturer}">>${file}
 echo "Brand: ${brand}">>${file}
 echo "Product: ${product}">>${file}
-logcat -f ${file} *:S logcatcher-xposed-mlgmxyysd:S EdXposed-Bridge:V &
+logcat -f ${file} *:S EdXposed-Bridge:V &

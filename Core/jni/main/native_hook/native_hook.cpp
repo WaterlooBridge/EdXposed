@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <inject/config_manager.h>
+#include <sys/mman.h>
 
 #include "include/logging.h"
 #include "native_hook.h"
@@ -264,6 +265,27 @@ void getSuspendSyms(int api_level, void *artHandle, void (*hookFun)(void *, void
     }
 }
 
+void reset_art_protection() {
+    FILE *f;
+    if ((f = fopen("/proc/self/maps", "r"))) {
+        char buf[PATH_MAX], perm[12] = {'\0'}, dev[12] = {'\0'}, mapname[PATH_MAX] = {'\0'};
+        uintptr_t begin, end, inode, foo;
+
+        while (!feof(f)) {
+            if (fgets(buf, sizeof(buf), f) == 0)
+                break;
+            sscanf(buf, "%lx-%lx %s %lx %s %ld %s", &begin, &end, perm, &foo, dev, &inode, mapname);
+            if (strncmp(mapname, "/system/fake-libs/", 18) == 0)
+                continue;
+            if (strstr(mapname, "libart.so") && strstr(perm, "x")) {
+                mprotect(reinterpret_cast<void *>(begin), end - begin, PROT_READ | PROT_EXEC);
+                break;
+            }
+        }
+        fclose(f);
+    }
+}
+
 void install_art_hooks(void *artHandle) {
     int api_level = GetAndroidApiLevel();
     if (inlineHooksInstalled) {
@@ -274,17 +296,6 @@ void install_art_hooks(void *artHandle) {
     if (!whaleHandle) {
         LOGE("can't open libwhale: %s", dlerror());
         return;
-    }
-    if (api_level >= ANDROID_Q && strstr(kLibArtPath_Q, "lib64")) {
-        void *libOpenSym = dlsym(whaleHandle, "WDynamicLibOpen");
-        if (!libOpenSym)
-            return;
-        void *art_elf_image_ = reinterpret_cast<void *(*)(const char *)>(libOpenSym)(kLibArtPath_Q);
-        if (art_elf_image_ == nullptr)
-            return;
-        void *libCloseSym = dlsym(whaleHandle, "WDynamicLibClose");
-        if (libCloseSym)
-            reinterpret_cast<void (*)(void *)>(libCloseSym)(art_elf_image_);
     }
     void *hookFunSym = dlsym(whaleHandle, "WInlineHookFunction");
     if (!hookFunSym) {
@@ -297,6 +308,7 @@ void install_art_hooks(void *artHandle) {
         LOGE("can't open libart: %s", dlerror());
         return;
     }
+    reset_art_protection();
     hookRuntime(api_level, artHandle, hookFun);
     hookInstrumentation(api_level, artHandle, hookFun);
     getSuspendSyms(api_level, artHandle, hookFun);
@@ -311,10 +323,10 @@ void install_art_hooks(void *artHandle) {
     LOGI("install inline hooks done");
 }
 
-void *(*mydlopenBackup)(const char *file_name, int flags, const void *caller) = nullptr;
+void *(*mydlopenBackup)(const char *file_name, int flags, const void *ext_info, const void *caller) = nullptr;
 
-void *mydlopen(const char *file_name, int flags, const void *caller) {
-    void *handle = mydlopenBackup(file_name, flags, caller);
+void *mydlopen(const char *file_name, int flags, const void *ext_info, const void *caller) {
+    void *handle = mydlopenBackup(file_name, flags, ext_info, caller);
     if (file_name != nullptr && std::string(file_name).find("libart.so") != std::string::npos) {
         install_art_hooks(handle);
     }
@@ -347,20 +359,23 @@ void install_inline_hooks() {
         }
         void (*hookFun)(void *, void *, void **) = reinterpret_cast<void (*)(void *, void *,
                                                                              void **)>(hookFunSym);
-        void *dlHandle = dlopen(kLibDlPath, RTLD_LAZY | RTLD_GLOBAL);
+        void *libOpenSym = dlsym(whaleHandle, "WDynamicLibOpen");
+        void *dlHandle = reinterpret_cast<void *(*)(const char *)>(libOpenSym)(kLinkerPath);
         if (!dlHandle) {
             LOGE("can't open libdl: %s", dlerror());
             return;
         }
-        void *dlopenSym = dlsym(dlHandle, "__loader_dlopen");
+        void *libSymbolSym = dlsym(whaleHandle, "WDynamicLibSymbol");
+        void *dlopenSym = reinterpret_cast<void *(*)(void *, const char *)>(libSymbolSym)(dlHandle, "__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv");
         if (!dlopenSym) {
             LOGE("can't get dlopenFunction: %s", dlerror());
             return;
         }
         (*hookFun)(dlopenSym, reinterpret_cast<void *>(mydlopen),
                    reinterpret_cast<void **>(&mydlopenBackup));
+        void *libCloseSym = dlsym(whaleHandle, "WDynamicLibClose");
+        reinterpret_cast<void (*)(void *)>(libCloseSym)(dlHandle);
         dlclose(whaleHandle);
-        dlclose(dlHandle);
     } else {
         void *artHandle = dlopen(kLibArtPath, RTLD_LAZY | RTLD_GLOBAL);
         install_art_hooks(artHandle);

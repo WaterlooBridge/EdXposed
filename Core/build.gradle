@@ -1,24 +1,17 @@
 import org.gradle.internal.os.OperatingSystem
 
 apply plugin: 'com.android.library'
-version "v1.0.8_beta"
+version "v1.1.0_beta"
 extensions["module_name"] = "EdXposed"
 android {
     compileSdkVersion 28
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-
-        externalNativeBuild {
-            ndkBuild {
-                abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
-                arguments "NDK_PROJECT_PATH=jni/"
-            }
-        }
     }
     externalNativeBuild {
-        ndkBuild {
-            path 'jni/Android.mk'
+        cmake {
+            path "jni/CMakeLists.txt"
         }
     }
 }

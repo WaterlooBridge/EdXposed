@@ -101,10 +101,11 @@ task fixIml {
     }
 }
 
-tasks.preBuild.dependsOn fixIml
+//tasks.preBuild.dependsOn fixIml
 
 dependencies {
     compileOnly files("libs/framework-stub.jar")
+    implementation project(':Core')
 }
 
 afterEvaluate {
@@ -131,6 +132,14 @@ afterEvaluate {
             }
             copy {
                 from "build/intermediates/cmake/${nameLowered}/obj/arm64-v8a"
+                into '../Core/template_override/system/lib64'
+            }
+            copy {
+                from "../Core/build/intermediates/cmake/${nameLowered}/obj/armeabi-v7a"
+                into '../Core/template_override/system/lib'
+            }
+            copy {
+                from "../Core/build/intermediates/cmake/${nameLowered}/obj/arm64-v8a"
                 into '../Core/template_override/system/lib64'
             }
         }

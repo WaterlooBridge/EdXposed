@@ -11,4 +11,5 @@
 /captures
 /release
 .externalNativeBuild
+.cxx
 elf-cleaner.sh
