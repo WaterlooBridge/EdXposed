@@ -8,6 +8,7 @@
 
 #include "include/logging.h"
 #include "native_hook.h"
+#include "include/art/oat_file_manager.h"
 
 static bool inlineHooksInstalled = false;
 
@@ -318,6 +319,7 @@ void install_art_hooks(void *artHandle) {
     } else {
         LOGE("disableHiddenAPIPolicyImpl failed.");
     }
+    art::oat_file_manager::DisableOnlyUseSystemOatFiles(artHandle, hookFun);
     dlclose(whaleHandle);
     inlineHooksInstalled = true;
     LOGI("install inline hooks done");
