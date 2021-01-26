@@ -3,8 +3,8 @@ function copy_files {
   # Change "template" to your module name
   # You can also use this folder as your config folder
   NAME="edxposed"
-  mkdir -p $TMP_DIR_MAGISK/data/misc/riru/modules/$NAME
-  cp $MODULE_NAME/template_override/riru_module.prop $TMP_DIR_MAGISK/data/misc/riru/modules/$NAME/module.prop
+  mkdir -p $TMP_DIR_MAGISK/data/adb/riru/modules/$NAME
+  cp $MODULE_NAME/template_override/riru_module.prop $TMP_DIR_MAGISK/data/adb/riru/modules/$NAME/module.prop
 
   cp $MODULE_NAME/template_override/customize.sh $TMP_DIR_MAGISK
   cp $MODULE_NAME/template_override/module.prop $TMP_DIR_MAGISK

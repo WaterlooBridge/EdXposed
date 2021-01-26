@@ -25,7 +25,7 @@ using namespace std;
 
 static bool use_prot_storage = GetAndroidApiLevel() >= ANDROID_N;
 static const char *data_path_prefix = use_prot_storage ? "/data/user_de/0/" : "/data/user/0/";
-static const char *config_path_tpl = "%s/%s/conf/%s";
+static const char *config_path_tpl = "%s%s/conf/%s";
 static char data_test_path[PATH_MAX];
 static char base_config_path[PATH_MAX];
 static char blacklist_path[PATH_MAX];

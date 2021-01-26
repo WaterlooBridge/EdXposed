@@ -9,6 +9,7 @@
 #include "include/logging.h"
 #include "native_hook.h"
 #include "include/art/oat_file_manager.h"
+#include "include/dobby.h"
 
 static bool inlineHooksInstalled = false;
 
@@ -266,7 +267,9 @@ void getSuspendSyms(int api_level, void *artHandle, void (*hookFun)(void *, void
     }
 }
 
-void reset_art_protection() {
+void reset_art_protection(int api_level) {
+    if (api_level < ANDROID_Q)
+        return;
     FILE *f;
     if ((f = fopen("/proc/self/maps", "r"))) {
         char buf[PATH_MAX], perm[12] = {'\0'}, dev[12] = {'\0'}, mapname[PATH_MAX] = {'\0'};
@@ -309,7 +312,7 @@ void install_art_hooks(void *artHandle) {
         LOGE("can't open libart: %s", dlerror());
         return;
     }
-    reset_art_protection();
+    reset_art_protection(api_level);
     hookRuntime(api_level, artHandle, hookFun);
     hookInstrumentation(api_level, artHandle, hookFun);
     getSuspendSyms(api_level, artHandle, hookFun);
@@ -323,16 +326,6 @@ void install_art_hooks(void *artHandle) {
     dlclose(whaleHandle);
     inlineHooksInstalled = true;
     LOGI("install inline hooks done");
-}
-
-void *(*mydlopenBackup)(const char *file_name, int flags, const void *ext_info, const void *caller) = nullptr;
-
-void *mydlopen(const char *file_name, int flags, const void *ext_info, const void *caller) {
-    void *handle = mydlopenBackup(file_name, flags, ext_info, caller);
-    if (file_name != nullptr && std::string(file_name).find("libart.so") != std::string::npos) {
-        install_art_hooks(handle);
-    }
-    return handle;
 }
 
 void install_inline_hooks() {
@@ -349,35 +342,16 @@ void install_inline_hooks() {
     LOGI("using api level %d", api_level);
 
     if (api_level >= ANDROID_Q) {
-        void *whaleHandle = dlopen(kLibWhalePath, RTLD_LAZY | RTLD_GLOBAL);
-        if (!whaleHandle) {
-            LOGE("can't open libwhale: %s", dlerror());
-            return;
+        // From Riru v22 we can't get ART handle by hooking dlopen, so we get libart.so from soinfo.
+        // Ref: https://android.googlesource.com/platform/bionic/+/master/linker/linker_soinfo.h
+        auto solist = linker_get_solist();
+        for (auto & it : solist) {
+            const char* real_path = linker_soinfo_get_realpath(it);
+            if (real_path != nullptr && std::string(real_path).find("libart.so") != std::string::npos) {
+                install_art_hooks(it);
+                break;
+            }
         }
-        void *hookFunSym = dlsym(whaleHandle, "WInlineHookFunction");
-        if (!hookFunSym) {
-            LOGE("can't get WInlineHookFunction: %s", dlerror());
-            return;
-        }
-        void (*hookFun)(void *, void *, void **) = reinterpret_cast<void (*)(void *, void *,
-                                                                             void **)>(hookFunSym);
-        void *libOpenSym = dlsym(whaleHandle, "WDynamicLibOpen");
-        void *dlHandle = reinterpret_cast<void *(*)(const char *)>(libOpenSym)(kLinkerPath);
-        if (!dlHandle) {
-            LOGE("can't open libdl: %s", dlerror());
-            return;
-        }
-        void *libSymbolSym = dlsym(whaleHandle, "WDynamicLibSymbol");
-        void *dlopenSym = reinterpret_cast<void *(*)(void *, const char *)>(libSymbolSym)(dlHandle, "__dl__Z9do_dlopenPKciPK17android_dlextinfoPKv");
-        if (!dlopenSym) {
-            LOGE("can't get dlopenFunction: %s", dlerror());
-            return;
-        }
-        (*hookFun)(dlopenSym, reinterpret_cast<void *>(mydlopen),
-                   reinterpret_cast<void **>(&mydlopenBackup));
-        void *libCloseSym = dlsym(whaleHandle, "WDynamicLibClose");
-        reinterpret_cast<void (*)(void *)>(libCloseSym)(dlHandle);
-        dlclose(whaleHandle);
     } else {
         void *artHandle = dlopen(kLibArtPath, RTLD_LAZY | RTLD_GLOBAL);
         install_art_hooks(artHandle);

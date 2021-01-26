@@ -6,7 +6,6 @@ set(BUILD_SOURCES
         main.cpp
         native_hook/native_hook.cpp
         include/misc.cpp
-        include/riru.c
         java_hook/java_hook.cpp
         inject/framework_hook.cpp
         inject/config_manager.cpp

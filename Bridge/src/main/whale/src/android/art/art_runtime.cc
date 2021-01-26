@@ -184,6 +184,8 @@ bool ArtRuntime::OnLoad(JavaVM *vm, JNIEnv *env, jclass java_class) {
     CHECK_FIELD(quick_generic_jni_trampoline, nullptr)
     class_linker_objects_.quick_generic_jni_trampoline_ = quick_generic_jni_trampoline;
 
+    hookGetOatQuickMethodHeader(art_elf_image_);
+
     WDynamicLibClose(art_elf_image_);
     pthread_mutex_init(&mutex, nullptr);
 //    EnforceDisableHiddenAPIPolicy();
@@ -495,6 +497,27 @@ void ArtRuntime::hookEncodeArtMethod(void *art_elf_image_) {
     if (symbol) {
         WInlineHookFunction(symbol, reinterpret_cast<void *>(OnInvokeEncodeMethodId),
                             nullptr);
+    }
+}
+
+bool ArtRuntime::isHookedMethod(void *art_method) {
+    auto entry = hooked_method_map_.find(reinterpret_cast<jmethodID>(art_method));
+    return entry != hooked_method_map_.end();
+}
+
+void* (*GetOatQuickMethodHeaderBackup)(void *thiz, uintptr_t pc);
+void* OnGetOatQuickMethodHeader(void *thiz, uintptr_t pc) {
+    if (ArtRuntime::Get()->isHookedMethod(thiz))
+        return nullptr;
+    return GetOatQuickMethodHeaderBackup(thiz, pc);
+}
+
+void ArtRuntime::hookGetOatQuickMethodHeader(void *art_elf_image_) {
+    void *symbol = WDynamicLibSymbol(art_elf_image_, "_ZN3art9ArtMethod23GetOatQuickMethodHeaderEm");
+    if (symbol == nullptr)
+        symbol = WDynamicLibSymbol(art_elf_image_, "_ZN3art9ArtMethod23GetOatQuickMethodHeaderEj");
+    if (symbol) {
+        WInlineHookFunction(symbol, reinterpret_cast<void *>(OnGetOatQuickMethodHeader), reinterpret_cast<void **>(&GetOatQuickMethodHeaderBackup));
     }
 }
 

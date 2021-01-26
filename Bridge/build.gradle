@@ -122,7 +122,10 @@ afterEvaluate {
 
         def makeAndCopyTask = task("makeAndCopy${nameCapped}", type: Copy, dependsOn: "assemble${nameCapped}") {
             copy {
-                from "build/intermediates/transforms/dexMerger/${nameLowered}/0/classes.dex"
+                def dexOutPath = variant.name.contains("release") ?
+                        "${buildDir}/intermediates/dex/${nameLowered}/minify${nameCapped}WithR8" :
+                        "${buildDir}/intermediates/dex/${nameLowered}/mergeDex${nameCapped}"
+                from "${dexOutPath}/classes.dex"
                 into '../Core/template_override/system/framework'
                 rename("classes.dex", "edxposed.dex")
             }

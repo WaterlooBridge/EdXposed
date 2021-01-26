@@ -48,7 +48,7 @@ fi
 ui_print "- Extracting extra files"
 unzip -o "$ZIPFILE" 'data/*' -d "$MODPATH" >&2
 
-TARGET="/data/misc/riru/modules"
+TARGET="/data/adb/riru/modules"
 
 # TODO: do not overwrite if file exists
 [[ -d "$TARGET" ]] || mkdir -p "$TARGET" || fail "- Can't mkdir -p $TARGET"
