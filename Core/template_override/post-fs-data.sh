@@ -6,16 +6,16 @@ MODDIR=${0%/*}
 # This script will be executed in post-fs-data mode
 # More info in the main Magisk thread
 
+grep_prop() {
+    local REGEX="s/^$1=//p"
+    shift
+    local FILES="$@"
+    [[ -z "$FILES" ]] && FILES='/system/build.prop'
+    sed -n "$REGEX" ${FILES} 2>/dev/null | head -n 1
+}
+
 # EdXposed Version
-edxp_ver="1.1.1_beta"
-
-# necessary for using mmap in system_server process
-supolicy --live "allow system_server system_server process {execmem}"
-supolicy --live "allow system_server system_server memprotect {mmap_zero}"
-
-# read configs set and module apk file in zygote
-supolicy --live "allow zygote app_data_file * *"
-supolicy --live "allow zygote apk_data_file * *"
+edxp_ver=$(grep_prop version "${MODDIR}/module.prop")
 
 # beginning of Log Catcher
 android_sdk=`getprop ro.build.version.sdk`

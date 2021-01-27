@@ -36,7 +36,7 @@ and zip binaries can be downloaded from [here](http://gnuwin32.sourceforge.net/p
 
 ## Install
 
-1. make sure Magisk v20.0 or higher is installed.
+1. make sure Magisk v20.4 or higher is installed.
 2. download [Riru-core](https://github.com/RikkaApps/Riru/releases) v22 or higher and install it in Magisk Manager or recovery.
 3. download [EdXposed](https://github.com/WaterlooBridge/EdXposed/releases) and install it in Magisk Manager or recovery.
 4. Install [Xposed Installer](https://github.com/DVDAndroid/XposedInstaller)
