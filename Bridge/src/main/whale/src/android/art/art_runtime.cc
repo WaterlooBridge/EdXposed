@@ -273,7 +273,7 @@ jobject
 ArtRuntime::InvokeOriginalMethod(jlong slot, jobject this_object, jobjectArray args) {
     JNIEnv *env = GetJniEnv();
     auto *param = reinterpret_cast<ArtHookParam *>(slot);
-    if (slot <= 0) {
+    if (slot == 0) {
         env->ThrowNew(
                 WellKnownClasses::java_lang_IllegalArgumentException,
                 "Failed to resolve slot."
